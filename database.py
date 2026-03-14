@@ -130,6 +130,10 @@ class Database:
             ).fetchone()
             return dict(row) if row else None
     
+    def get_latest_health(self, bot_name: str) -> Optional[Dict]:
+        """Alias for get_bot_health (for command handler compatibility)"""
+        return self.get_bot_health(bot_name)
+    
     def increment_failure_count(self, bot_name: str):
         """Increment consecutive failure counter"""
         with self._conn() as conn:
@@ -217,6 +221,19 @@ class Database:
                 VALUES (?, ?, ?, ?, ?)
             """, (bot_name, datetime.now().isoformat(), error_type,
                   message, log_line))
+    
+    def get_recent_errors(self, hours: int = 1) -> List[Dict]:
+        """Get recent errors within time window"""
+        cutoff = datetime.now().timestamp() - (hours * 3600)
+        cutoff_iso = datetime.fromtimestamp(cutoff).isoformat()
+        
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM error_log
+                WHERE timestamp > ?
+                ORDER BY timestamp DESC
+            """, (cutoff_iso,)).fetchall()
+            return [dict(row) for row in rows]
     
     # ── Daily Metrics ───────────────────────────────────────────────
     
