@@ -173,6 +173,13 @@ class BotMonitor:
         self.check_count += 1
         logger.debug(f"Check cycle #{self.check_count}")
         
+        # Update heartbeat file (so external monitors can detect if we freeze)
+        try:
+            heartbeat_file = Path("/tmp/monitor_heartbeat")
+            heartbeat_file.touch()
+        except Exception as e:
+            logger.warning(f"Failed to update heartbeat file: {e}")
+        
         for bot_name in self.bots.keys():
             try:
                 health = self.check_bot(bot_name)
