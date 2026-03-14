@@ -1,0 +1,10 @@
+# Bot Trading Agent Dependencies
+
+# Process monitoring
+psutil>=5.9.0
+
+# HTTP requests (Telegram alerts)
+requests>=2.28.0
+
+# No additional deps needed - uses stdlib for everything else
+# (sqlite3, logging, datetime, subprocess, etc. are all built-in)
