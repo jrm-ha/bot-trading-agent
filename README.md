@@ -49,7 +49,8 @@ pip install -r requirements.txt
 
 Edit `config.py` or set environment variables:
 - `TELEGRAM_BOT_TOKEN` - Bot token for alerts
-- `TELEGRAM_CHAT_ID` - Your chat ID
+- `TELEGRAM_CHAT_ID` - Chat ID for critical alerts (James)
+- `TELEGRAM_TRIAGE_CHAT_ID` - Chat ID for triage alerts (Molly group)
 - `BOT_DIR` - Path to kalshi-bot directory
 - `CHECK_INTERVAL` - Seconds between checks (default: 30)
 
@@ -118,16 +119,27 @@ Total Today: +$7.50
 ✅ SOL: healthy
 ```
 
-## Alerts Reference
+## Alert Routing
 
-| Alert | Trigger | Action |
-|-------|---------|--------|
-| Bot Crashed | PID missing | Auto-restart after market close |
-| Exception in Log | Error detected | Immediate Telegram alert |
-| Stop-loss Failed | Full bet lost | Immediate alert (critical) |
-| Bot Frozen | No activity 16min | Investigate + alert |
-| Crash Loop | 2nd crash in 5min | Stop restart + alert |
-| Balance Mismatch | Large discrepancy | Alert for review |
+**Two-tier alert system:**
+
+### 🚨 Critical → James Directly
+- **Bot Crashed** - PID missing, auto-restart after market close
+- **Stop-loss Failed** - Full bet lost (critical bug)
+- **Crash Loop** - 2+ crashes in 5min, restart disabled
+- **Restart Failed** - Couldn't restart bot
+- **Daily Summary** - Morning (8am) and evening (8pm) totals
+
+### ⚠️ Triage → Kalshi/Molly Alerts Group
+- **Exception in Log** - Error detected, needs investigation
+- **Bot Frozen** - No activity for 16min
+- **Restart Success** - Bot auto-restarted successfully
+- **Balance Mismatch** - Discrepancy detected
+
+**Why two tiers?**
+- James only gets pinged for truly critical issues
+- Molly triages exceptions/warnings during heartbeats
+- Reduces noise, faster response on both ends
 
 ---
 
