@@ -55,16 +55,21 @@ Edit `config.py` or set environment variables:
 
 ## Running
 
-**As spawned OpenClaw agent:**
-```bash
-# From OpenClaw, spawn persistent agent:
-/sessions spawn --runtime subagent --mode session --task "Run monitoring agent" --label bot-monitor
-```
-
-**Standalone (testing):**
+**Monitor (auto-restarts, alerts):**
 ```bash
 cd ~/bot-trading-agent
-python monitor.py
+nohup python3 monitor.py > monitor_output.log 2>&1 &
+```
+
+**Command Handler (Telegram /bal, /status, /health):**
+```bash
+cd ~/bot-trading-agent
+nohup python3 bot_commands.py > bot_commands.log 2>&1 &
+```
+
+**Check if running:**
+```bash
+ps aux | grep -E "(monitor|bot_commands).py" | grep -v grep
 ```
 
 ## Safety Features
@@ -89,6 +94,30 @@ python monitor.py
 - **ETH** - `/Users/moltbot/kalshi-bot/experiment_eth.py`
 - **SOL** - `/Users/moltbot/kalshi-bot/experiment_sol.py`
 
+## Telegram Commands
+
+Send these commands in your Telegram chat with the bot:
+
+- **`/bal`** or **`/balance`** - Today's profit/loss + bot health
+- **`/status`** - Detailed status (PID, last activity, recent errors)
+- **`/health`** - Quick health check (all systems operational?)
+
+Example `/bal` output:
+```
+💰 Kalshi Bot Balance
+
+🟢 BTC: +$12.50 (3W-1L, 4 trades)
+🔴 ETH: -$5.00 (1W-2L, 3 trades)
+⚪️ SOL: No trades today
+
+Total Today: +$7.50
+
+📊 Bot Health:
+✅ BTC: healthy
+✅ ETH: healthy
+✅ SOL: healthy
+```
+
 ## Alerts Reference
 
 | Alert | Trigger | Action |
@@ -100,11 +129,7 @@ python monitor.py
 | Crash Loop | 2nd crash in 5min | Stop restart + alert |
 | Balance Mismatch | Large discrepancy | Alert for review |
 
-## NOT DEPLOYED YET
-
-**Status:** Code built, under review.  
-**Deploy after:** 3 more reviews at 8am 2026-03-14.
-
 ---
 
-Built by Molly for James - March 14, 2026
+**Status:** Deployed 2026-03-14  
+Built by Molly for James
