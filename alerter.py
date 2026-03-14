@@ -11,17 +11,19 @@ logger = logging.getLogger("monitor.alerter")
 
 
 class Alerter:
-    """Send alerts via Telegram with spam prevention"""
+    """Send alerts via Telegram with spam prevention and severity-based routing"""
     
-    def __init__(self, bot_token: str, chat_id: str, db):
+    def __init__(self, bot_token: str, chat_id: str, db, triage_chat_id: Optional[str] = None):
         self.bot_token = bot_token
-        self.chat_id = chat_id
+        self.chat_id = chat_id  # Critical alerts → James
+        self.triage_chat_id = triage_chat_id or chat_id  # Triage → Molly or fallback to James
         self.db = db
         self.base_url = f"https://api.telegram.org/bot{bot_token}"
     
     def send(self, message: str, alert_type: str = "info", 
              bot_name: Optional[str] = None, 
-             rate_limit_min: int = 1) -> bool:
+             rate_limit_min: int = 1,
+             target_chat_id: Optional[str] = None) -> bool:
         """
         Send Telegram message with rate limiting.
         
@@ -30,6 +32,7 @@ class Alerter:
             alert_type: Type of alert (for deduplication)
             bot_name: Bot this alert is about
             rate_limit_min: Don't send same alert_type within N minutes
+            target_chat_id: Override default chat_id (for routing)
             
         Returns:
             True if sent, False if rate-limited or failed
@@ -40,11 +43,13 @@ class Alerter:
             logger.info(f"Rate-limited alert type '{alert_type}' (sent {recent_count}x in last {rate_limit_min}min)")
             return False
         
+        chat_id = target_chat_id or self.chat_id
+        
         try:
             response = requests.post(
                 f"{self.base_url}/sendMessage",
                 json={
-                    "chat_id": self.chat_id,
+                    "chat_id": chat_id,
                     "text": message,
                     "parse_mode": "Markdown",
                 },
@@ -77,21 +82,23 @@ class Alerter:
                         bot_name=bot_name, rate_limit_min=5)
     
     def alert_bot_frozen(self, bot_name: str, minutes_idle: int):
-        """Alert that bot is alive but inactive"""
+        """Alert that bot is alive but inactive → TRIAGE"""
         msg = f"⚠️ **{bot_name} Bot Frozen**\n\n"
         msg += f"Process running but no activity for {minutes_idle} minutes.\n"
         msg += f"Investigating..."
         
         return self.send(msg, alert_type=f"frozen_{bot_name}",
-                        bot_name=bot_name, rate_limit_min=10)
+                        bot_name=bot_name, rate_limit_min=10,
+                        target_chat_id=self.triage_chat_id)
     
     def alert_exception(self, bot_name: str, error_line: str):
-        """Alert on exception in logs"""
+        """Alert on exception in logs → TRIAGE"""
         msg = f"❌ **{bot_name} Exception**\n\n"
         msg += f"```\n{error_line[:200]}\n```"
         
         return self.send(msg, alert_type=f"exception_{bot_name}",
-                        bot_name=bot_name, rate_limit_min=3)
+                        bot_name=bot_name, rate_limit_min=3,
+                        target_chat_id=self.triage_chat_id)
     
     def alert_stop_loss_failure(self, bot_name: str, trade_details: dict):
         """CRITICAL: Stop-loss failed, full bet lost"""
@@ -117,13 +124,14 @@ class Alerter:
                         bot_name=bot_name, rate_limit_min=15)
     
     def alert_restart_success(self, bot_name: str, new_pid: int):
-        """Inform that bot was restarted"""
+        """Inform that bot was restarted → TRIAGE"""
         msg = f"✅ **{bot_name} Restarted**\n\n"
         msg += f"New PID: {new_pid}\n"
         msg += f"Monitoring resumed."
         
         return self.send(msg, alert_type=f"restart_{bot_name}",
-                        bot_name=bot_name, rate_limit_min=5)
+                        bot_name=bot_name, rate_limit_min=5,
+                        target_chat_id=self.triage_chat_id)
     
     def alert_restart_failed(self, bot_name: str, reason: str):
         """Alert that restart attempt failed"""

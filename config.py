@@ -11,7 +11,8 @@ class Config:
     
     # Telegram alerting
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8736902793:AAEguym8s4-FX2WIT5_5MucYbbHn8li5L4Q")
-    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "5311548956")  # James's personal chat
+    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "5311548956")  # James's personal chat (critical alerts)
+    TELEGRAM_TRIAGE_CHAT_ID = os.getenv("TELEGRAM_TRIAGE_CHAT_ID", "-5130182904")  # Kalshi/Molly Alerts group (triage)
     
     # Bot directory
     BOT_DIR = Path(os.getenv("BOT_DIR", "/Users/moltbot/kalshi-bot"))

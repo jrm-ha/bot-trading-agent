@@ -54,7 +54,12 @@ class BotMonitor:
         
         # Initialize components
         self.db = Database(Config.DB_PATH)
-        self.alerter = Alerter(Config.TELEGRAM_BOT_TOKEN, Config.TELEGRAM_CHAT_ID, self.db)
+        self.alerter = Alerter(
+            Config.TELEGRAM_BOT_TOKEN, 
+            Config.TELEGRAM_CHAT_ID,
+            self.db,
+            triage_chat_id=Config.TELEGRAM_TRIAGE_CHAT_ID
+        )
         self.metrics = MetricsTracker(self.db, self.alerter)
         
         # Initialize bot monitors
